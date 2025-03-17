@@ -5,11 +5,6 @@ on:
     branches:
       - main
 
-# permissions:
-#   contents: read   # Default to read-only for repository contents
-#   issues: write    # Allow write access for managing issues
-#   pull-requests: write  # Allow write access for managing pull requests
-
 jobs:
   test-and-check:
     name: Test and Quality Check
