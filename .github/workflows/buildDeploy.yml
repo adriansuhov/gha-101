@@ -9,14 +9,14 @@ permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy Docker Image
+  build-and-push:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout Code
       - name: Checkout code
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v4.2.2
 
       # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -37,3 +37,13 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+  deploy:
+    name: Deploy Docker Image
+    runs-on: pi5
+    
+    steps:
+      # Step 1: Checkout Code
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+
