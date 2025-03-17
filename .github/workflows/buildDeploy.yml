@@ -34,9 +34,7 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
-      - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+
   deploy:
     name: Deploy Docker Image
     runs-on: pi5
