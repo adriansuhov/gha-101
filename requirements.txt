@@ -1,0 +1,15 @@
+# Core dependencies
+numpy==1.23.5           # Example library for numerical computations
+pandas==1.5.3           # For data manipulation and analysis
+
+# Testing tools
+pytest==7.3.1           # A testing framework for running unit tests
+pytest-cov==4.1.0       # Plugin for measuring test coverage
+
+# Code quality tools
+flake8==6.1.0           # For linting and style guide enforcement
+black==23.3.0           # A code formatter for consistent style
+isort==5.12.0           # To sort and organize imports
+
+# Optional dependencies (remove if not needed)
+requests==2.28.2        # For making HTTP requests
