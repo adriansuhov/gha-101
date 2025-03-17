@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   test-and-check:
+    name: Test and Quality Check
     runs-on: ubuntu-latest
 
     steps:
