@@ -1,0 +1,38 @@
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up the programming environment (example: Python)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Run Unit Tests
+      - name: Run unit tests
+        run: |
+          python -m unittest discover tests
+
+      # Run Code Quality Checks (e.g., linting)
+      - name: Lint code
+        run: |
+          pip install flake8
+          flake8 .
