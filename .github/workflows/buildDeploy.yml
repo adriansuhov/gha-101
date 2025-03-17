@@ -4,19 +4,20 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy Docker Image
+  build-and-push:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout Code
       - name: Checkout code
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v4.2.2
 
       # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -34,6 +35,32 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
-      - name: Push Docker Image
+
+  deploy-self:
+    name: Deploy Docker Image on Self-Hosted
+    needs: build-and-push 
+    runs-on: pi5
+    
+    steps:
+      # Step 1: Checkout Code
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+      # Step 2: Pull and Deploy Docker Image
+      - name: Deploy Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker run -d -p 80:80 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+  deploy-ubuntu:
+    name: Deploy Docker Image on Ubuntu
+    needs: build-and-push 
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout Code
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+      # Step 2: Pull and Deploy Docker Image
+      - name: Deploy Docker Image
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker run -d -p 80:80 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
