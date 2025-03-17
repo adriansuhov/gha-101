@@ -25,12 +25,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Build Docker Image
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} .
 
-      # Step 4: Push Docker Image
+      # Step 4: Push Docker Image with Both Tags
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
