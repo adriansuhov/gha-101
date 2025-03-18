@@ -36,10 +36,12 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64/v8 \
             --cache-from=type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:latest \
+            --cache-to=type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:latest,mode=max \
             -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
             -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} \
             --push \
             .
+
 
 
   deploy-self:
