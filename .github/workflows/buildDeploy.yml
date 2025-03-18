@@ -15,33 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
+      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Cache Docker Layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-docker-
+      # Step 3: Setup Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
+      # Step 4: Build Docker Image
       - name: Build Docker Image
         run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} \
-            --push \
-            --cache-to=type=local,dest=/tmp/.buildx-cache \
-            --cache-from=type=local,src=/tmp/.buildx-cache \
-            .
+          docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} --push .
+
+      # Step 5: Push Docker Image with Both Tags (Not needed if pushing via buildx)
+      # - name: Push Docker Image
+      #   run: |
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
 
   deploy-self:
     name: Deploy Docker Image on Self-Hosted
