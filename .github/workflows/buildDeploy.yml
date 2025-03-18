@@ -15,24 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Setup Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 4: Build Docker Image
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64/v8
@@ -45,23 +41,33 @@ jobs:
           provenance: false
 
   deploy-self:
-    name: Deploy Docker Image on Self-Hosted
-    needs: build-and-push 
+    name: Deploy on Raspberry Pi
+    needs: build-and-push
     runs-on: pi5
     steps:
+      - name: Ensure Docker and Buildx are available
+        run: |
+          if ! command -v docker &> /dev/null; then
+            echo "Docker is not installed"; exit 1
+          fi
+          if ! docker buildx version &> /dev/null; then
+            echo "Buildx is not available"; exit 1
+          fi
+
       - name: Deploy Docker Image
         run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull --quiet ${{ secrets.DOCKER_USERNAME }}/my-app:latest
           docker stop my-container || true
           docker rm my-container || true
-          docker run -d -p 81:81 --name my-container ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker run -d --pull always --restart unless-stopped -p 81:81 --name my-container ${{ secrets.DOCKER_USERNAME }}/my-app:latest
           
   deploy-ubuntu:
-    name: Deploy Docker Image on Ubuntu
-    needs: build-and-push 
+    name: Deploy on Ubuntu
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Docker Image
         run: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          docker run -d -p 81:81 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull --quiet ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+
