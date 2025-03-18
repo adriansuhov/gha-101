@@ -15,26 +15,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Code
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
 
-      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Setup Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pip-cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      # Step 4: Build Docker Image
       - name: Build and Push Multi-Architecture Docker Image
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64/v8 \
+            --cache-from type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app-cache:latest \
+            --cache-to type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app-cache:latest,mode=max \
             -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest \
             -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} \
             --push \
