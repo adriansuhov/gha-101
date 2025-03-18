@@ -50,6 +50,8 @@ jobs:
       # Step 1: Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4.2.2
+      - name: Install tar
+        run: sudo apt-get update && sudo apt-get install -y tar
       # Step 2: Pull and Deploy Docker Image
       - name: Deploy Docker Image
         run: |
