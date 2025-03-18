@@ -45,18 +45,21 @@ jobs:
     name: Deploy Docker Image on Self-Hosted
     needs: build-and-push 
     runs-on: pi5
-    
+  
     steps:
       # Step 1: Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4.2.2
-      - name: Install tar
-        run: sudo apt-get update && sudo apt-get install -y tar
-      # Step 2: Pull and Deploy Docker Image
+      # Step 2: Modify PATH
+      - name: Add /usr/bin to PATH
+        run: echo "::add-path::/usr/bin"
+      # Step 3: Pull and Deploy Docker Image
       - name: Deploy Docker Image
         run: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          docker run -d -p 81:81 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker stop $(docker ps -a -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/my-app) || true
+          docker rm $(docker ps -a -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/my-app) || true
+          docker run -d -p 80:80 --name my-container ${{ secrets.DOCKER_USERNAME }}/my-app:latest
   deploy-ubuntu:
     name: Deploy Docker Image on Ubuntu
     needs: build-and-push 
