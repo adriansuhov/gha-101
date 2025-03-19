@@ -38,8 +38,8 @@ jobs:
           tags: |
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:${{ github.run_id }}
-          cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
-          cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest,mode=max
+          cache-from: ''
+          cache-to: ''
           provenance: false
 
   deploy-self:
