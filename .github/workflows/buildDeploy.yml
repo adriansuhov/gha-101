@@ -38,9 +38,10 @@ jobs:
           tags: |
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:${{ github.run_id }}
-          cache-from: ''
-          cache-to: ''
+          cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache
+          cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache,mode=max
           provenance: false
+
 
   deploy-self:
     name: Deploy on Raspberry Pi
