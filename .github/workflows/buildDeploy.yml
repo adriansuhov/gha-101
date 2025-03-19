@@ -78,8 +78,8 @@ jobs:
           docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
   
   deploy:
-    name: Deploy to multiple envs
-    needs: build-and-push
+    name: Deploy to 
+    needs: [deploy-self, deploy-ubuntu] 
     strategy:
       matrix:
         runner: [pi5, ubuntu-latest]
