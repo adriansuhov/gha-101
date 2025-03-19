@@ -86,7 +86,7 @@ jobs:
 
       - name: Deploy Docker Image
         run: |
-          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
           docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
 
 
