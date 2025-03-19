@@ -83,10 +83,11 @@ jobs:
           az acr login --name adsuho
           az acr repository list --name adsuho --output table
           az acr repository show-tags --name adsuho --repository my-app --output table
+          docker pull adsuho.azurecr.io/my-app:latest
 
-      - name: Deploy Docker Image
-        run: |
-          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
-          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+      # - name: Deploy Docker Image
+      #   run: |
+      #     docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
+      #     docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
 
 
