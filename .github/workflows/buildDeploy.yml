@@ -77,5 +77,23 @@ jobs:
         run: |
           docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
           docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+  
+  deploy:
+    name: Deploy to multiple envs
+    needs: build-and-push
+    strategy:
+      matrix:
+        runner: [pi5, ubuntu-latest]
+    runs-on: ${{ matrix.environment == 'pi5' || 'ubuntu-latest' }} 
+    steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-
+      - name: Deploy Docker Image
+        run: |
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
