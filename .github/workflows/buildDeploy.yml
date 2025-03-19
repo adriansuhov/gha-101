@@ -42,52 +42,47 @@ jobs:
           # cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest,mode=max
           provenance: false
 
-  # deploy-self:
-  #   name: Deploy on Raspberry Pi
-  #   needs: build-and-push
-  #   runs-on: pi5
-  #   steps:
-  #     - name: Ensure Docker and Buildx are available
-  #       run: |
-  #         if ! command -v docker &> /dev/null; then
-  #           echo "Docker is not installed"; exit 1
-  #         fi
-  #         if ! docker buildx version &> /dev/null; then
-  #           echo "Buildx is not available"; exit 1
-  #         fi
-  #     - name: Log in to Azure Container Registry
-  #       uses: docker/login-action@v3
-  #       with:
-  #         registry: ${{ secrets.AZURE_REGISTRY_URL }}
-  #         username: ${{ secrets.ACR_USERNAME }}
-  #         password: ${{ secrets.ACR_PASSWORD }}
-  #     - name: Deploy Docker Image
-  #       run: |
-  #         docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
-  #         docker stop my-container || true
-  #         docker rm my-container || true
-  #         docker run -d --pull always --restart unless-stopped -p 81:81 --name my-container ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+  deploy-self:
+    name: Deploy on Raspberry Pi
+    needs: build-and-push
+    runs-on: pi5
+    steps:
+      - name: Ensure Docker and Buildx are available
+        run: |
+          if ! command -v docker &> /dev/null; then
+            echo "Docker is not installed"; exit 1
+          fi
+          if ! docker buildx version &> /dev/null; then
+            echo "Buildx is not available"; exit 1
+          fi
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Deploy Docker Image
+        run: |
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker stop my-container || true
+          docker rm my-container || true
+          docker run -d --pull always --restart unless-stopped -p 81:81 --name my-container ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
           
   deploy-ubuntu:
     name: Deploy on Ubuntu
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to Azure
-        uses: azure/login@v2
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Verify ACR Repository
+      - name: Deploy Docker Image
         run: |
-          az acr login --name adsuho
-          az acr repository list --name adsuho --output table
-          az acr repository show-tags --name adsuho --repository my-app --output table
-          docker pull adsuho.azurecr.io/my-app:latest
-
-      # - name: Deploy Docker Image
-      #   run: |
-      #     docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
-      #     docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
 
 
