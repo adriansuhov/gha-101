@@ -79,7 +79,10 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
       - name: Debug ACR Login
-        run: docker info
+        run: |
+          docker info
+          docker login ${{ secrets.AZURE_REGISTRY_URL }} -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+
       - name: Deploy Docker Image
         run: |
           docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
