@@ -21,53 +21,78 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image to ACR
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-            ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:latest,mode=max
+            ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+            ${{ secrets.AZURE_REGISTRY_URL }}/my-app:${{ github.run_id }}
+          cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache
+          cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache,mode=max
           provenance: false
+
 
   deploy-self:
     name: Deploy on Raspberry Pi
     needs: build-and-push
     runs-on: pi5
+    environment: ARM 
     steps:
-      - name: Ensure Docker and Buildx are available
-        run: |
-          if ! command -v docker &> /dev/null; then
-            echo "Docker is not installed"; exit 1
-          fi
-          if ! docker buildx version &> /dev/null; then
-            echo "Buildx is not available"; exit 1
-          fi
-
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
       - name: Deploy Docker Image
         run: |
-          docker pull --quiet ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          docker stop my-container || true
-          docker rm my-container || true
-          docker run -d --pull always --restart unless-stopped -p 81:81 --name my-container ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
           
   deploy-ubuntu:
     name: Deploy on Ubuntu
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: x86_64
     steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
       - name: Deploy Docker Image
         run: |
-          docker pull --quiet ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          docker run -d --pull always --rm -p 81:81 ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+  
+  deploy:
+    name: Deploy to multiple envs
+    needs: build-and-push
+    strategy:
+      matrix:
+        runner: [pi5, ubuntu-latest]
+    runs-on: ${{ matrix.runner == 'pi5' && 'pi5' || 'ubuntu-latest' }} 
+    steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
+      - name: Deploy Docker Image
+        run: |
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
