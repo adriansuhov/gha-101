@@ -38,8 +38,8 @@ jobs:
           tags: |
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
             ${{ secrets.AZURE_REGISTRY_URL }}/my-app:${{ github.run_id }}
-          # cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
-          # cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest,mode=max
+          cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest,mode=max
           provenance: false
 
   deploy-self:
@@ -82,7 +82,7 @@ jobs:
 
       - name: Deploy Docker Image
         run: |
-          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/adsuho/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
           docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
 
 
