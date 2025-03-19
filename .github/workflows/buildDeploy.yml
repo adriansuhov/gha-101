@@ -70,7 +70,7 @@ jobs:
           
   deploy-ubuntu:
     name: Deploy on Ubuntu
-    # needs: build-and-push
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure
