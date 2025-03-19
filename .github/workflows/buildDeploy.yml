@@ -48,14 +48,6 @@ jobs:
     needs: build-and-push
     runs-on: pi5
     steps:
-      - name: Ensure Docker and Buildx are available
-        run: |
-          if ! command -v docker &> /dev/null; then
-            echo "Docker is not installed"; exit 1
-          fi
-          if ! docker buildx version &> /dev/null; then
-            echo "Buildx is not available"; exit 1
-          fi
       - name: Log in to Azure Container Registry
         uses: docker/login-action@v3
         with:
@@ -65,9 +57,7 @@ jobs:
       - name: Deploy Docker Image
         run: |
           docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
-          docker stop my-container || true
-          docker rm my-container || true
-          docker run -d --pull always --restart unless-stopped -p 81:81 --name my-container ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
           
   deploy-ubuntu:
     name: Deploy on Ubuntu
