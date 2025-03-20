@@ -4,36 +4,95 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy Docker Image
+  build-and-push:
+    name: Build and push Docker image
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Code
       - name: Checkout code
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v4
 
-      # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-app:latest -t ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }} .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # Step 4: Push Docker Image with Both Tags
-      - name: Push Docker Image
+      - name: Build and Push Docker Image to ACR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64/v8
+          push: true
+          tags: |
+            ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+            ${{ secrets.AZURE_REGISTRY_URL }}/my-app:${{ github.run_id }}
+          cache-from: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache
+          cache-to: type=registry,ref=${{ secrets.AZURE_REGISTRY_URL }}/my-app:cache,mode=max
+          provenance: false
+
+
+  deploy-self:
+    name: Deploy on Raspberry Pi
+    needs: build-and-push
+    runs-on: pi5
+    environment: ARM 
+    steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Deploy Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.run_id }}
-      - name: Push Docker Image
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          
+  deploy-ubuntu:
+    name: Deploy on Ubuntu
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: x86_64
+    steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+  
+  deploy:
+    name: Deploy to Different Environments
+    needs: [deploy-self, deploy-ubuntu]  # Specify both previous deploy stages
+    strategy:
+      matrix:
+        runner: [pi5, ubuntu-latest]  # Matrix of runners
+    runs-on: ${{ matrix.runner }}  # Uses matrix value for the runner
+    steps:
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_REGISTRY_URL }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy Docker Image
+        run: |
+          docker pull ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
+          docker run -d --pull always --rm -p 81:81 ${{ secrets.AZURE_REGISTRY_URL }}/my-app:latest
